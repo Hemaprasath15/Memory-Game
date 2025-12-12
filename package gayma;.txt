@@ -1,0 +1,96 @@
+package gayma;
+
+import javax.swing.*;
+import javax.swing.Timer;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.util.List;
+
+public class MemoryCardGame extends JFrame {
+
+    private JButton[] buttons = new JButton[16];   // 4x4 grid
+    private String[] values = new String[16];      // card values
+    private boolean[] matched = new boolean[16];   // matched cards
+
+    private int firstIndex = -1;
+    private boolean busy = false;  // block clicks during flip
+    private int score = 0;
+
+    public MemoryCardGame() {
+        setTitle("Memory Card Game");
+        setSize(600, 600);
+        setLayout(new GridLayout(4, 4));
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        generateCards();
+        createButtons();
+
+        setVisible(true);
+    }
+
+    // Generate shuffled pairs
+    private void generateCards() {
+        String[] base = {"A","A","B","B","C","C","D","D",
+                         "E","E","F","F","G","G","H","H"};
+        List<String> list = new ArrayList<>(Arrays.asList(base));
+        Collections.shuffle(list);
+        list.toArray(values);
+    }
+
+    // Create buttons
+    private void createButtons() {
+        for (int i = 0; i < 16; i++) {
+            JButton btn = new JButton("?");
+            btn.setFont(new Font("Arial", Font.BOLD, 32));
+            buttons[i] = btn;
+
+            final int idx = i;
+            btn.addActionListener(e -> handleClick(idx));
+
+            add(btn);
+        }
+    }
+
+    // Handle click
+    private void handleClick(int index) {
+        if (busy || matched[index] || !buttons[index].getText().equals("?")) return;
+
+        buttons[index].setText(values[index]);
+
+        if (firstIndex == -1) {
+            firstIndex = index;  // first card
+        } else {
+            int secondIndex = index;
+            busy = true;  // block clicks while checking
+
+            if (values[firstIndex].equals(values[secondIndex])) {
+                matched[firstIndex] = matched[secondIndex] = true;
+                score++;
+                firstIndex = -1;
+                busy = false;
+
+                if (score == 8) {
+                    JOptionPane.showMessageDialog(this,
+                            "🎉 You matched all cards!\nCongratulations!");
+                }
+
+            } else {
+                // Not a match → flip back after delay
+                Timer timer = new Timer(700, e -> {
+                    buttons[firstIndex].setText("?");
+                    buttons[secondIndex].setText("?");
+                    firstIndex = -1;
+                    busy = false;
+                });
+                timer.setRepeats(false);
+                timer.start();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(MemoryCardGame::new);
+    }
+}
